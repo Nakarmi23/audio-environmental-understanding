@@ -5,7 +5,7 @@ def collate_audio_text(batch):
     captions = [item["caption"] for item in batch]
     uids = [item["uid"] for item in batch]
     return {
-        "waveforms": waveforms,
-        "captions": captions,
-        "uids": uids,
+        "waveform": waveforms,
+        "caption": captions,
+        "uid": uids,
         }
