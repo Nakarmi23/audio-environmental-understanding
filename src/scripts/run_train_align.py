@@ -31,7 +31,7 @@ def main():
         model=model,
         train_loader=train_loader,
         val_loader=val_loader,
-        epochs=5,
+        epochs=15,
         lr=3e-4,
         weight_decay=1e-4,
         temperature=0.07,
