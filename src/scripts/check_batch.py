@@ -23,9 +23,9 @@ extractor = LogMelExtractor(
 )
 
 batch = next(iter(dl))
-waveforms = batch["waveforms"]
+waveforms = batch["waveform"]
 log_mel_specs = extractor(waveforms)
 
 print("Waveforms shape:", waveforms.shape)
 print("Log-Mel Spectrograms shape:", log_mel_specs.shape)
-print("Captions:", batch["captions"])
+print("Captions:", batch["caption"])
