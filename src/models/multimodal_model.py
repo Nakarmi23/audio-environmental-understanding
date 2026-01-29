@@ -5,6 +5,7 @@ from src.preprocessing.audio_features import LogMelExtractor
 from src.models.audio_encoder import AudioEncoder
 from src.models.text_encoder import TextEncoder
 from src.models.projection import ProjectionHead
+from src.preprocessing.spec_augment import SpecAugment
 
 
 class MultimodalModel(nn.Module):
@@ -35,13 +36,21 @@ class MultimodalModel(nn.Module):
         self.audio_proj = ProjectionHead(in_dim=audio_emb_dim, out_dim=shared_dim)
         self.text_proj = ProjectionHead(in_dim=text_emb_dim, out_dim=shared_dim)
 
+        self.specaug = SpecAugment(
+            time_mask_param=30,
+            freq_mask_param=8,
+            num_time_masks=2,
+            num_freq_masks=2,
+            p=0.5,
+        )
+
         self.to(device)
 
     def encode_audio(self, waveforms: torch.Tensor) -> torch.Tensor:
         waveforms = waveforms.to(self.device)
 
         logmel = self.logmel(waveforms)
-
+        logmel = self.specaug(logmel)
 
         if logmel.ndim == 3:
             logmel = logmel.unsqueeze(1)
