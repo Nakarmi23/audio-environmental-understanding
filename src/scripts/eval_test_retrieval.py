@@ -8,9 +8,11 @@ from src.datasets.collate import collate_audio_text
 
 
 def main():
+    # Evaluate trained model on test set
     device = "cuda" if torch.cuda.is_available() else "cpu"
     ckpt_path = "runs/align/best.pt"
 
+    # Load trained model from checkpoint
     model = MultimodalModel(
         device=device,
     ).to(device)

@@ -16,12 +16,13 @@ class AudioCapsItem:
     duration: float
 
 class AudioCapsDataset(Dataset):
+    # Dataset loader for AudioCaps: loads audio files and their text captions
     def __init__(
             self,
             tsv_path: str ,
             root_dir: str ,
             target_sr: int = 16000,
-            clip_seconds: float = 10.0,
+            clip_seconds: float = 10.0,  # Fixed duration for all clips
     ):
         self.tsv_path = Path(tsv_path)
         self.root_dir = Path(root_dir)
@@ -30,6 +31,7 @@ class AudioCapsDataset(Dataset):
         self.clip_samples = int(target_sr * clip_seconds)
 
         self.df = pd.read_csv(self.tsv_path, sep='\t', dtype={"uniq_id": int})
+        # Verify required columns exist
         required = {"uniq_id", "audio", "text", "duration"}
         missing = required - set(self.df.columns)
         if missing:
@@ -41,12 +43,15 @@ class AudioCapsDataset(Dataset):
     def _load_audio(self, path: Path) -> torch.Tensor:
         waveform, sr = torchaudio.load(str(path))
 
+        # Convert stereo to mono
         if waveform.shape[0] > 1:
             waveform = torch.mean(waveform, dim=0, keepdim=True)
 
+        # Resample if needed
         if sr != self.target_sr:
             waveform = torchaudio.functional.resample(waveform, sr, self.target_sr)
 
+        # Pad or truncate to fixed length
         n = waveform.shape[1]
         if n < self.clip_samples:
             pad = self.clip_samples - n

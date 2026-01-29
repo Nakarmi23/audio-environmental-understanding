@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class InfoNCELoss(nn.Module):
+    # Contrastive loss that pulls matching audio-text pairs together, pushes non-matches apart
     def __init__(self, temperature: float = 0.07):
         super().__init__()
-        self.temperature = temperature
+        self.temperature = temperature  # Temperature scaling for logits
 
     def forward(
             self,
@@ -20,10 +21,13 @@ class InfoNCELoss(nn.Module):
         B = audio_embeddings.shape[0]
         device = audio_embeddings.device
 
+        # Compute similarity matrix and scale by temperature
         logits = (audio_embeddings @ text_embeddings.t()) / self.temperature
 
+        # Diagonal elements are positive pairs (same index = matching pair)
         labels = torch.arange(B, device=device)
 
+        # Symmetric loss: audio->text and text->audio
         loss_a2t = F.cross_entropy(logits, labels)
         loss_t2a = F.cross_entropy(logits.t(), labels)
 

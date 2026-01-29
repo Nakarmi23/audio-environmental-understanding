@@ -3,8 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class AudioEncoder(nn.Module):
+    # CNN encoder that processes log-mel spectrograms to extract audio embeddings
     def __init__(self, n_mels: int = 64, embedding_dim:int = 512):
         super().__init__()
+        # Progressive feature extraction: 1->32->64->128->256 channels
         self.conv_block_1 = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=3, padding=1),
             nn.BatchNorm2d(32),
@@ -32,9 +34,9 @@ class AudioEncoder(nn.Module):
             nn.ReLU(),
         )
 
-        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))  # Pool to fixed size regardless of input
 
-        self.fc = nn.Linear(256, embedding_dim)
+        self.fc = nn.Linear(256, embedding_dim)  # Project to final embedding dimension
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv_block_1(x)

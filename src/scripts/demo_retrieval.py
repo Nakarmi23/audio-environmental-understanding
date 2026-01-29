@@ -8,6 +8,7 @@ from src.datasets.collate import collate_audio_text
 
 @torch.no_grad()
 def main():
+    # Demo: retrieve top-5 captions for a random audio sample
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load model
@@ -29,7 +30,7 @@ def main():
         collate_fn=collate_audio_text,
     )
 
-    # ---- Encode ALL captions ----
+    # Encode all text captions from the dataset
     all_text_embs = []
     all_captions = []
 
@@ -43,14 +44,14 @@ def main():
 
     random_index = torch.randint(0, len(test_dataset), (1,)).item()
 
-    # ---- Pick ONE audio sample ----
-    sample = test_dataset[random_index]  # you can change index
+    # Pick one audio sample and encode it
+    sample = test_dataset[random_index]
     wave = sample["waveform"].unsqueeze(0).to(device)
     gt_caption = sample["caption"]
 
     audio_z = model.encode_audio(wave).cpu()  # (1, D)
 
-    # ---- Compute similarity ----
+    # Compute similarity with all text captions and get top-5
     sims = (audio_z @ all_text_embs.T).squeeze(0)  # (N,)
     topk = torch.topk(sims, k=5)
 

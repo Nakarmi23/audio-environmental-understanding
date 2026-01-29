@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ProjectionHead(nn.Module):
+    # 2-layer MLP that projects embeddings to shared space for contrastive learning
     def __init__(
             self,
             in_dim:int,
@@ -13,7 +14,7 @@ class ProjectionHead(nn.Module):
         ):
         super().__init__()
         if hidden_dim is None:
-            hidden_dim = in_dim
+            hidden_dim = in_dim  # Default hidden size matches input
 
         self.normalize = normalize
 
@@ -28,5 +29,5 @@ class ProjectionHead(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         z = self.net(x)
         if self.normalize:
-            z = F.normalize(z, p=2, dim=-1, eps=1e-8)
+            z = F.normalize(z, p=2, dim=-1, eps=1e-8)  # L2 normalize for cosine similarity
         return z

@@ -21,12 +21,12 @@ def train_align(
     device: str = "cpu",
     out_dir: str = "runs/align",
     log_every: int = 50,
-    use_amp: bool = True,
+    use_amp: bool = True,  # Automatic mixed precision for faster training
 ):
     metrics_logger = MetricsLogger(f"{out_dir}/metrics.csv")
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
-    # Only train audio encoder + projection heads
+    # Freeze text encoder, only train audio components
     for p in model.text_encoder.parameters():
         p.requires_grad = False
 
@@ -35,10 +35,10 @@ def train_align(
     optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay)
     loss_fn = InfoNCELoss(temperature=temperature)
 
-    scaler = torch.cuda.amp.GradScaler(enabled=(use_amp and device.startswith("cuda")))
+    scaler = torch.cuda.amp.GradScaler(enabled=(use_amp and device.startswith("cuda")))  # For mixed precision
 
     global_step = 0
-    best_val = -1.0
+    best_val = -1.0  # Track best validation score
 
     model.train()
 
@@ -56,6 +56,7 @@ def train_align(
 
             with torch.cuda.amp.autocast(enabled=(use_amp and device.startswith("cuda"))):
                 audio_z, text_z = model(wave, caps)      # (B,D), (B,D)
+                # Check for NaN/Inf values that would break training
                 if not torch.isfinite(audio_z).all():
                     print("NaN/Inf in audio_z")
                     print("audio_z min/max:", audio_z.min().item(), audio_z.max().item())
@@ -72,7 +73,7 @@ def train_align(
             if scaler.is_enabled():
                 scaler.unscale_(optimizer)
 
-            torch.nn.utils.clip_grad_norm_(params, 1.0)
+            torch.nn.utils.clip_grad_norm_(params, 1.0)  # Prevent exploding gradients
 
             scaler.step(optimizer)
             scaler.update()
@@ -84,7 +85,7 @@ def train_align(
                 avg = running / bi
                 print(f"[Epoch {epoch}/{epochs}] step={global_step} batch={bi} loss={avg:.4f}")
 
-        # ---- Validation retrieval
+        # Evaluate retrieval performance on validation set
         if val_loader is not None:
             model.eval()
             metrics = evaluate_retrieval(model, val_loader, max_batches=None)
@@ -105,7 +106,7 @@ def train_align(
 
             metrics_logger.log(epoch_metrics)
 
-            # Save best by a2t_R@10 (you can change criterion)
+            # Save checkpoint if this is the best model so far (by a2t_R@10)
             score = metrics["a2t_R@10"]
             if score > best_val:
                 best_val = score
@@ -119,7 +120,7 @@ def train_align(
                 }, ckpt_path)
                 print(f"Saved best checkpoint to: {ckpt_path}")
 
-        # Save last
+        # Always save latest checkpoint
         last_path = os.path.join(out_dir, "last.pt")
         torch.save({
             "epoch": epoch,
