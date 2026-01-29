@@ -33,27 +33,11 @@ Thumbs.db
 *.swo
 
 # =========================
-# Logs & outputs
-# =========================
-*.log
-runs/
-outputs/
-checkpoints/
-
-# =========================
 # Data (VERY IMPORTANT)
 # =========================
 data
 *.mp3
 *.flac
-
-# =========================
-# Model artifacts
-# =========================
-*.pt
-*.pth
-*.ckpt
-*.onnx
 
 # =========================
 # Experiment artifacts
